@@ -20,6 +20,8 @@ router.get("/posts", async ( req, res) => {
       "title": post.title,
       "createdAt": post.createdAt,
     }
+  }).sort(function(a, b){
+    return b.createdAt - a.createdAt
   })
   res.status(200).json({ "data": results});
 });
