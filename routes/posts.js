@@ -6,7 +6,7 @@ const Posts = require("../schemas/posts.js")
 router.post("/posts/", async (req, res) => {
   const { user, password, title, content } = req.body;
   const createdPosts = await Posts.create({ user, password, title, content });
-  res.json({ "message": "게시글을 생성하였습니다." })
+  res.status(201).json({ "message": "게시글을 생성하였습니다." })
 })
 
 // 전체 게시글 목록조회

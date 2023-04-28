@@ -11,7 +11,7 @@ router.post("/posts/:postId/comments/", async (req, res) => {
   const { user, password, content } = req.body;
   if (content && password) {  
     await Comments.create({ postId: postId, user: user, password: password, content: content });
-    res.status(200).json({ "message": "댓글을 생성하였습니다." })
+    res.status(201).json({ "message": "댓글을 생성하였습니다." })
   } else if(!content) {
     res.status(400).send( "댓글 내용을 입력해주세요" )
   } else if(!password) {
