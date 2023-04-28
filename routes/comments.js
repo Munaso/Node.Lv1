@@ -35,9 +35,12 @@ router.get("/posts/:postId/comments", async (req, res) => {
       }
     }
   }).filter((elem) => { return elem !== undefined })
+    .sort(function(a, b){
+      return b.createdAt - a.createdAt
+    })
+    
 
   console.log(results)
-
 
   res.json({
     data: results,
@@ -85,7 +88,6 @@ router.delete("/posts/:postId/comments/:commentId", async (req, res) => {
       { $set: { content: req.body.content } }
     ) // 조건에 맞는 댓글이 있다면 삭제 진행
     res.status(200).json({ message: "댓글을 삭제하였습니다." });
-
   } else {
     res.status(400).send("비밀번호를 확인해주세요");
   }
