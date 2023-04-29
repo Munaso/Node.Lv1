@@ -10,7 +10,7 @@ const connect = require("./schemas/index.js")
 connect();
 
 app.use(express.json());
-app.use("/api", [ indexRouter ])
+app.use("/", [ indexRouter ])
 
 app.get("/", (req, res)=> {
     console.log(req.query);
