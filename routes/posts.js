@@ -9,12 +9,11 @@ router.post("/posts/", async (req, res) => {
 
   const { user, password, title, content } = req.body;
 
-  const newPostId = posts[posts.length - 1].postId + 1
-  // 작성될 게시글의 newPostId 설정( 마지막에 등록된 게시글의 postId + 1 )
-  const postId = posts.length ? newPostId : 1
-  // 현재 게시글이 없다면 새 게시글의 postId는 1, 현재 게시글이 있다면 newPostId
-  console.log(postId)
-  await Posts.create({ postId, user, password, title, content });
+  // const newPostId = posts[posts.length - 1].postId + 1
+  // // 작성될 게시글의 newPostId 설정( 마지막에 등록된 게시글의 postId + 1 )
+  // const postId = posts.length ? newPostId : 1
+  // // 현재 게시글이 없다면 새 게시글의 postId는 1, 현재 게시글이 있다면 newPostId
+  await Posts.create({ postId:1, user, password, title, content });
   // db 생성 및 저장
 
   res.status(201).json({ "message": "게시글을 생성하였습니다." })
