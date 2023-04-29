@@ -16,13 +16,13 @@ router.post("/posts/:_postId/comments/", async (req, res) => {
   const postIdCorrect = posts.some((post) => post.postId === Number(_postId))
   // 실제 존재하는 게시글의 postId를 param에 입력했다면 true 할당
 
-  // const newCommentId = comments[comments.length - 1].commentId + 1
-  // // 작성될 게시글의 newCommentId 설정( 마지막에 등록된 댓글의 commentId + 1 )
-  // const commentId = comments.length ? newCommentId : 1
+  const newCommentId = comments[comments.length - 1].commentId + 1
+  // 작성될 게시글의 newCommentId 설정( 마지막에 등록된 댓글의 commentId + 1 )
+  const commentId = comments.length ? newCommentId : 1
 
   if (user && password && content && postIdCorrect) {
     // user, password, content 가 입력되고 postIdCorrect 가 true라면.
-    await Comments.create({ postId: _postId, commentId:1, user, password, content });
+    await Comments.create({ postId: _postId, commentId, user, password, content });
     res.status(201).json({ "message": "댓글을 생성하였습니다." })
   } else if (content === "") {
     res.status(400).send("댓글 내용을 입력해주세요")
