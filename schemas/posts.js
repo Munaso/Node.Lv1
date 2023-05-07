@@ -5,18 +5,19 @@ const postsSchema = new mongoose.Schema({
     type: Number,
     required: true,
   }, 
-  user: {
+  userId: {
     type: String,
     required: true,
-  }, 
-  password: {
+    unique: true,
+  },
+  nickname: {
     type: String,
     required: true,
+    unique: true,
   },
   title: {
     type: String,
-    required: true,
- 
+    required: true, 
   },
   content: {
     type: String,

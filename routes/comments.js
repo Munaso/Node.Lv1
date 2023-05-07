@@ -1,123 +1,119 @@
 const express = require("express") // express 사용 선언
 const router = express.Router(); //Router 사용 선언
-
+const authMiddleware = require("../middlewares/auth-middleware")
 
 const Posts = require("../schemas/posts.js")
 const Comments = require("../schemas/comments.js")
 
 // ◎  댓글 작성  ◎
-router.post("/posts/:_postId/comments/", async (req, res) => {
-  const comments = await Comments.find({});
-  const posts = await Posts.find({});
+router.post("/posts/:_postId/comments/", authMiddleware, async (req, res) => {
+  try {
+    // 로그인 여부 확인하는 미들웨어를 통과했을 시 userId, postId, content 전달받음.
+    const comments = await Comments.find({});
+    const { userId } = res.locals.user;
+    const { _postId } = req.params;
+    const { content } = req.body;
+    // 전달받은 postId에 해당되는 게시글이 있는지 확인
+    const [post] = await Posts.find({ postId: _postId });
+    // commentId 생성: 기존 댓글들중 마지막 댓글의 commentId + 1 할당
+    // 기존 댓글이 아예 없을 경우 1 할당
+    const newcommentId = comments.length === 0 ? 1 : comments[comments.length - 1].commentId + 1
 
-  const { _postId } = req.params;
-  const { user, password, content } = req.body;
-
-  const postIdCorrect = posts.some((post) => post.postId === Number(_postId))
-  // 실제 존재하는 게시글의 postId를 param에 입력했다면 true 할당
-
-  const newCommentId = comments[comments.length - 1].commentId + 1
-  // 작성될 게시글의 newCommentId 설정( 마지막에 등록된 댓글의 commentId + 1 )
-  const commentId = comments.length ? newCommentId : 1
-
-  if (user && password && content && postIdCorrect) {
-    // user, password, content 가 입력되고 postIdCorrect 가 true라면.
-    await Comments.create({ postId: _postId, commentId, user, password, content });
-    res.status(201).json({ "message": "댓글을 생성하였습니다." })
-  } else if (content === "") {
-    res.status(400).send("댓글 내용을 입력해주세요")
-  } else {
-    res.status(400).send("데이터 형식이 올바르지 않습니다.")
+    //content 가 입력되고 params로 전달받은 postId를 가진 게시글이 존재한다면.
+    if (content && post) {
+      await Comments.create({ commentId: newcommentId, postId: _postId, userId: userId, content });
+      res.status(201).json({ "message": "댓글을 생성하였습니다." })
+      return
+    } else if (content === "") {
+      res.status(400).send("댓글 내용을 입력해주세요")
+    } else {
+      res.status(400).send("데이터 형식이 올바르지 않습니다.")
+    }
+  } catch (error) {
+    res.status(400).json({ message: "댓글 작성에 실패하였습니다." });
+    console.error(error)
   }
 })
 
 // ◎ 댓글 목록조회 ◎
 router.get("/posts/:_postId/comments", async (req, res) => {
-  const comments = await Comments.find({});
 
-  const { _postId } = req.params;
-  const results = comments.map((comment) => {
+  try {
+    const { _postId } = req.params;
+    // params로 전달받은 postId에 대한 댓글만 찾아 내림차순으로 배열에 할당
+    const comments = await Comments.find({ postId: _postId }).sort({ createdAt: -1 });
 
-    if (comment.postId === Number(_postId)) {
+    // 해당 댓글객체들에서 필요 키만 추출해 새로 배열에 넣음
+    let result = comments.map((comment) => {
       return {
         "commentId": comment.commentId,
-        "user": comment.user,
+        "postId": comment.postId,
+        "userId": comment.userId,
         "content": comment.content,
         "createdAt": comment.createdAt,
+        "updatedAt": comment.updatedAt
       }
-    }
-  }) // 전체 댓글 중 param 입력한 postId에 해당되는 댓글만 result 배열에 할당 
-    .filter((elem) => { return elem !== undefined })
-    // param 입력한 postId에 해당 안되는 comment 들은 result에서 제거
-    .sort(function (a, b) {
-      return b.createdAt - a.createdAt
-    }) // 내림차순 정렬
+    })
+    if (comments.length) { res.status(200).json({ comments: result }) }
+    else { res.status(200).json({ message: "데이터 형식이 올바르지 않습니다." }) }
 
-  res.json({
-    data: results,
-  }); // 댓글목록 리턴
+  } catch (error) {
+    res.status(400).json({ message: "댓글 조회에 실패하였습니다." });
+    console.error(error)
+  }
 });
 
 // ◎ 댓글 수정 ◎
-router.put("/posts/:_postId/comments/:_commentId", async (req, res) => {
-  const comments = await Comments.find({});
-  const posts = await Posts.find({});
+router.put("/posts/:_postId/comments/:_commentId", authMiddleware, async (req, res) => {
+  try {
+    const { userId } = res.locals.user;
+    const { _postId } = req.params;
+    const { _commentId } = req.params;
+    const { content } = req.body;
 
-  const { _postId } = req.params;
-  const { _commentId } = req.params;
-  const { password, content } = req.body;
+    // 전달받은 postId, commentId, userId와 일치하는 댓글 조회: 즉 로그인한 사용자가 작성한 댓글인지 여부확인
+    const [comment] = await Comments.find({ postId: _postId, commentId: _commentId, userId: userId });
+    // 그러한 댓글이 있다면 수정
+    if (comment && content) {
+      await Comments.updateOne({ commentId: _commentId },
+        { $set: { content: content } }
+      )
+      res.status(200).json({ message: "댓글을 수정하였습니다." });
+    } // twoIdMatch 가 true이고 targetComment가 존재하고, 내용입력을 했을 때 댓글을 수정함.
+    else if (content === "") {
+      res.status(400).json({ message: "댓글 내용을 입력해주세요" });
+    } else if (!comment) {
+      res.status(404).json({ message: "수정 권한이 없거나 댓글이 존재하지 않습니다." });
+    } else { res.status(400).json({ message: "데이터 형식이 올바르지 않습니다." }); }
 
-  const twoIdMatch = comments.filter((comment) => {
-    return comment.postId === Number(_postId)
-  })
-    .some((comment) => comment.commentId === Number(_commentId))
-  // param 입력받은 postId와 commentId 조합이 실제 데이터베이스에 존재할 때 twoIdMatch에 true를 할당함.
-
-  let targetComment = comments.find((comment) =>
-    comment.commentId === Number(_commentId) && comment.password === password)
-  // 전체 댓글중 전달받은 _commentId 와 password 가 일치하는 댓글을 targetComment에 할당함.
-  if (twoIdMatch && targetComment && content) {
-    await Comments.updateOne({ _id: targetComment._id },
-      { $set: { content: content } }
-    )
-    res.status(200).json({ message: "댓글을 수정하였습니다." });
-  } // twoIdMatch 가 true이고 targetComment가 존재하고, 내용입력을 했을 때 댓글을 수정함.
-  else if (content === "") {
-    res.status(400).json({ message: "댓글 내용을 입력해주세요" });
-  } else if (!targetComment) {
-    res.status(404).json({ message: "댓글 조회에 실패하였습니다." });
-  } else { res.status(400).json({ message: "데이터 형식이 올바르지 않습니다." }); }
-}
-)
+  } catch (error) {
+    res.status(400).json({ message: "댓글 수정에 실패하였습니다." });
+    console.error(error)
+  }
+})
 
 // ◎ 댓글 삭제 ◎
-router.delete("/posts/:_postId/comments/:_commentId", async (req, res) => {
-  const comments = await Comments.find({});
+router.delete("/posts/:_postId/comments/:_commentId", authMiddleware, async (req, res) => {
+  try {
+    const comments = await Comments.find({});
+    const { userId } = res.locals.user;
+    const { _postId } = req.params;
+    const { _commentId } = req.params;
 
-  const { _postId } = req.params;
-  const { _commentId } = req.params;
-  const { password } = req.body;
+    // 전달받은 postId, commentId, userId와 일치하는 댓글 조회: 즉 로그인한 사용자가 작성한 댓글인지 여부확인
+    const [comment] = await Comments.find({ postId: _postId, commentId: _commentId, userId: userId });
 
-  const twoIdMatch = comments.filter((comment) => {
-    return comment.postId === Number(_postId)
-  })
-    .some((comment) => comment.commentId === Number(_commentId))
-  // param 입력받은 postId와 commentId 조합이 실제 데이터베이스에 존재할 때 twoIdMatch에 true를 할당함.
-
-  let targetComment = comments.find((comment) =>
-    comment.commentId === Number(_commentId) && comment.password === password
-  ) // 모든 댓글 중에서 삭제할 댓글 지정 : 입력받은 commentId와 password를 db와 대조함.  
-
-  if (targetComment && twoIdMatch) {
-    await Comments.deleteOne({ commentId: targetComment.commentId })
-    // 조건에 맞는 댓글이 있다면 삭제 진행
-    res.status(200).json({ message: "댓글을 삭제하였습니다." });
-  } else if (!password) {
-    res.status(400).json({ message: "데이터 형식이 올바르지 않습니다." });
-  } else {
-    res.status(404).json({ message: "댓글 조회에 실패하였습니다." });
+    // 그러한 댓글이 있다면 삭제
+    if (comment) {
+      await Comments.deleteOne({ commentId: _commentId })
+      res.status(200).json({ message: "댓글을 삭제하였습니다." });
+    } else if (!comment) {
+      res.status(404).json({ message: "삭제 권한이 없거나 댓글이 존재하지 않습니다." });
+    }
+  } catch (error) {
+    res.status(400).json({ message: "댓글 삭제에 실패하였습니다." });
+    console.error(error)
   }
-}
-)
+})
 
 module.exports = router

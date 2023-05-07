@@ -1,21 +1,15 @@
 const mongoose = require("mongoose");
 
 const commentsSchema = new mongoose.Schema({
+  commentId:{
+    type: Number,
+    required: true,
+  },  
   postId: {
     type: Number,
     required: true,
   },
-
-  commentId:{
-    type: Number,
-    required: true,
-  },
-
-  user: {
-    type: String,
-    required: true,
-  }, 
-  password: {
+  userId: {
     type: String,
     required: true,
   },
