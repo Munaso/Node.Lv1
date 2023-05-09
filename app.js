@@ -6,13 +6,11 @@ const port = 3000;
 
 const indexRouter = require('./routes/index.js');
 
-
-const connect = require("./schemas/index.js")
-
-connect();
+// const connect = require("./schemas/index.js")
+// connect();
 
 app.use(express.json());
-// app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use("/", [ indexRouter ])
 
