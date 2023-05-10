@@ -30,7 +30,6 @@ module.exports = (sequelize, DataTypes) => {
     nickname: {
       allowNull: false, // NOT NULL
       type: DataTypes.STRING,
-      unique: true
     },
     title: {
       allowNull: false, // NOT NULL

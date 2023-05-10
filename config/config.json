@@ -1,9 +1,9 @@
 {
   "development": {
     "username": "root",
-    "password": "******",
+    "password": "*********",
     "database": "assignLv3",
-    "host": "*****",
+    "host": "*******",
     "dialect": "mysql"
   },
   "test": {
