@@ -14,6 +14,12 @@ module.exports = (sequelize, DataTypes) => {
         targetKey: 'userId', // 3. users 모델의 userId 컬럼을
         foreignKey: 'userId', // 4. posts 모델의 UserId 컬럼과 연결합니다.
       });
+
+      // 1. Posts 모델에서
+      this.hasMany(models.Comments, { // 2. Comments 모델에게 1:N 관계 설정을 합니다.
+        sourceKey: 'postId', // 3. Posts 모델의 postId 컬럼을
+        foreignKey: 'postId', // 4. Comments 모델의 PostId 컬럼과 연결합니다.
+      });
     }
   }
   Posts.init({
@@ -51,3 +57,5 @@ module.exports = (sequelize, DataTypes) => {
   });
   return Posts;
 };
+
+// npx sequelize model:generate --name Comments --attributes content:string  
