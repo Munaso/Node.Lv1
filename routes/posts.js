@@ -1,7 +1,7 @@
 const express = require("express") // express 사용 선언
 const router = express.Router(); //Router 사용 선언
 const authMiddleware = require("../middlewares/auth-middleware")
-const { Posts } = require("../models")
+const { Posts, Users } = require("../models")
 
 // ◎ 게시글 작성 ◎
 router.post("/posts/", authMiddleware, async (req, res) => { // 로그인을 확인하는 authMiddleware를 거침.
@@ -30,7 +30,11 @@ router.post("/posts/", authMiddleware, async (req, res) => { // 로그인을 확
 router.get("/posts", async (req, res) => {
   //게시글 데이터 전체를 attributes에 명시된 컬럼만 내림차순으로 반환
   const result = await Posts.findAll({
-    attributes: ['postId', 'nickname', 'title', 'createdAt'],
+    attributes: ['postId',  'title', 'createdAt'],
+    include: [{
+      model: Users,
+      attributes: ["nickname"]
+  }],
     order: [['createdAt', 'DESC']],
   })
 
@@ -43,7 +47,11 @@ router.get("/posts/:_postId", async (req, res) => {
     const { _postId } = req.params;
     // params로 전달받은 postId와 일치하는 게시글에서 attributes에 명시된 컬럼만 할당
     const post = await Posts.findOne({
-      attributes: ['nickname', 'title', 'content', 'createdAt'],
+      attributes: ['title', 'content', 'createdAt'],
+      include: [{
+        model: Users,
+        attributes: ["nickname"]
+    }],
       where: { postId: _postId }
     });
 
