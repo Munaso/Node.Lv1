@@ -54,6 +54,7 @@ router.get("/posts/like/mylike", authMiddleware, async (req, res) => {
             },
             where: { userId: userId }
         });
+        
         // 그 '배열'이 존재한다면
         if (likes) {
             // 해당 배열 내 게시글 정보를 map()으로 보기쉽게 정리
