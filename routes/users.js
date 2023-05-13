@@ -8,7 +8,7 @@ const { Users } = require("../models")
 //  ◎ 회원가입 API ◎
 router.post('/signup', async (req, res) => {
     const { nickname, password, confirm } = req.body;
-    // try { // 닉네임으로 중복가입 여부 확인
+    try { // 닉네임으로 중복가입 여부 확인
         const isExistUser = await Users.findOne({
             where: { nickname: nickname }
         });
@@ -41,11 +41,11 @@ router.post('/signup', async (req, res) => {
         }
         await Users.create({ nickname, password })
         return res.status(201).json({ message: "회원가입 성공" });
-    // }
-    // catch (error) {
-    //     // 예상치 못한 에러 대응
-    //     return res.status(400).json({ message: "요청이 올바르지 않습니다." })
-    // }
+    }
+    catch (error) {
+        // 예상치 못한 에러 대응
+        return res.status(400).json({ message: "요청이 올바르지 않습니다." })
+    }
 })
 
 // ◎ 사용자 전체조회 API ◎

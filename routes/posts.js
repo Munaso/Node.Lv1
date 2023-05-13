@@ -16,8 +16,8 @@ router.post("/posts/", authMiddleware, async (req, res) => { // 로그인을 확
     if (typeof content !== 'string' || content === "") {
       return res.status(412).json({ 'message': '작성 내용을 확인해 주세요' })
     }
-    // posts 테이블에 userId, nickname 등 데이터 저장
-    const post = await Posts.create({ userId: userId, nickname, title, content });
+    // posts 테이블에 userId 등 데이터 저장
+    const post = await Posts.create({ userId: userId, title, content });
     res.status(201).json({ "data": post })
 
   } catch (error) {
@@ -28,17 +28,36 @@ router.post("/posts/", authMiddleware, async (req, res) => { // 로그인을 확
 
 // ◎ 전체 게시글 목록조회 ◎
 router.get("/posts", async (req, res) => {
-  //게시글 데이터 전체를 attributes에 명시된 컬럼만 내림차순으로 반환
-  const result = await Posts.findAll({
-    attributes: ['postId',  'title', 'createdAt'],
-    include: [{
-      model: Users,
-      attributes: ["nickname"]
-  }],
-    order: [['createdAt', 'DESC']],
-  })
+  try {
+    //게시글 데이터 전체를 attributes에 명시된 컬럼만 내림차순으로 반환
+    const allPosts = await Posts.findAll({
+      attributes: ['postId', 'title', 'createdAt'],
+      include: [{
+        model: Users,
+        attributes: ["userId", "nickname"]
+      }],
+      order: [['createdAt', 'DESC']],
+    })
 
-  res.status(200).json({ "Posts": result });
+    if (allPosts) {
+      // allPosts 값 보기좋게 정리하여 result에 재할당
+      result = allPosts.map((post) => {
+        return {
+          "postId": post.postId,
+          "userId": post.User.userId,
+          "nickname": post.User.nickname,
+          "title": post.title,
+          "createdAt": post.createdAt,
+        }
+      })
+      res.status(200).json({ "Posts": result });
+    } else if (!allPosts) {
+      res.status(400).json({ message: "게시글이 존재하지 않습니다." });
+    }
+  } catch (error) {
+    console.error(error)
+    res.status(400).json({ message: "게시글 목록 조회 실패" });
+  }
 });
 
 // ◎ (특정)게시글 상세조회 ◎
@@ -47,20 +66,30 @@ router.get("/posts/:_postId", async (req, res) => {
     const { _postId } = req.params;
     // params로 전달받은 postId와 일치하는 게시글에서 attributes에 명시된 컬럼만 할당
     const post = await Posts.findOne({
-      attributes: ['title', 'content', 'createdAt'],
+      attributes: ["postId", "title", "content", "createdAt"],
       include: [{
         model: Users,
-        attributes: ["nickname"]
-    }],
+        attributes: ["userId", "nickname"]
+      }],
       where: { postId: _postId }
     });
 
-    if (post) {
-      res.status(200).json({ "post": post })
-    } else if (!post) {
+    if (!post) {
       // 전달받은 postId 와 일치하는 게시글이 없을 경우
       res.status(400).json({ "message": "게시글 번호를 확인하시기 바랍니다." })
       return;
+    }
+    else if (post) {
+      // post 값 보기좋게 정리하여 result 에 재할당
+      result = {
+        "postId": post.postId,
+        "userId": post.User.userId,
+        "nickname": post.User.nickname,
+        "title": post.title,
+        "content": post.content,
+        "createdAt": post.createdAt
+      }
+      res.status(200).json({ "post": result })
     }
   } catch (error) {
     console.error(error);
@@ -107,7 +136,7 @@ router.delete("/posts/:_postId", authMiddleware, async (req, res) => {
     const { userId } = res.locals.user;
     // 전체 게시글중 받아온 postId와 로그인한 userId가 일치하는 게시글이 있다면 targetPost에 할당. 
     // 해당 userId를 가진 사용자가 작성한 게시글만 조회하게 됨.
-    const targetPost = await Posts.findOne({ where: { postId: _postId, userId: userId }  });
+    const targetPost = await Posts.findOne({ where: { postId: _postId, userId: userId } });
     if (targetPost) {
       await Posts.destroy({ where: { postId: _postId, userId: userId } })
       res.json({ message: "게시글을 삭제하였습니다." });

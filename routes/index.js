@@ -1,10 +1,12 @@
 const express = require('express');
 const app = express();
 
-const postsJs = require('./posts')
-const usersJs = require('./users')
-const authJs = require('./auth')
-const commentsJs = require('./comments')
+const posts = require('./posts')
+const users = require('./users')
+const auth = require('./auth')
+const comments = require('./comments')
+const likes = require('./likes')
 
 
-module.exports = [postsJs, usersJs, authJs, commentsJs]
+
+module.exports = [posts, users, auth, comments, likes]

@@ -3,11 +3,11 @@ const router = express.Router();
 const { Users } = require("../models")
 const jwt = require("jsonwebtoken")
 
-// 로그인 API 
+// ◎  로그인 API  
 router.post('/login', async(req, res)=>{
     const {nickname, password} = req.body;
 
-    // 닉네임이 일치하는 유저를 찾는다.
+    // body로 전달받은 닉네임이 일치하는 유저를 찾는다.
     const user = await Users.findOne({ where: { nickname } });
 
     //  1. 닉네임에 일치하는 유저가 존재하지 않거나
